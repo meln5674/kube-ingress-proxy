@@ -25,6 +25,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
+	networkingv1inf "k8s.io/client-go/informers/networking/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -44,6 +45,8 @@ var (
 	ingressClassMapping  map[string]string
 	k8sOverrides         clientcmd.ConfigOverrides
 	kubeconfigPath       string
+	allNamespaces        bool
+	namespaces           []string
 
 	whitespacePattern = regexp.MustCompile(`\s+`)
 	commentPattern    = regexp.MustCompile(`^(\s*#.*)?$`)
@@ -331,8 +334,22 @@ to quickly create a Cobra application.`,
 			defaultHosts.writeToFile(backupEtcHosts)
 			defaultHosts.writeToFile(etcHosts)
 
-			informerFactory := informers.NewSharedInformerFactory(k8sclient, time.Second*30)
-			ingressInformer := informerFactory.Networking().V1().Ingresses()
+			factories := []informers.SharedInformerFactory{}
+			ingressInformers := []networkingv1inf.IngressInformer{}
+
+			if allNamespaces {
+				informerFactory := informers.NewSharedInformerFactory(k8sclient, time.Second*30)
+				ingressInformer := informerFactory.Networking().V1().Ingresses()
+				factories = append(factories, informerFactory)
+				ingressInformers = append(ingressInformers, ingressInformer)
+			} else {
+				for _, ns := range namespaces {
+					informerFactory := informers.NewSharedInformerFactoryWithOptions(k8sclient, time.Second*30, informers.WithNamespace(ns))
+					ingressInformer := informerFactory.Networking().V1().Ingresses()
+					factories = append(factories, informerFactory)
+					ingressInformers = append(ingressInformers, ingressInformer)
+				}
+			}
 
 			upsert := func(obj interface{}) {
 				ingress, ok := obj.(*networkingv1.Ingress)
@@ -376,22 +393,26 @@ to quickly create a Cobra application.`,
 				}
 			}
 
-			ingressInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-				AddFunc: func(obj interface{}) {
-					klog.V(3).Infof("New ingress: %#v", obj)
-					upsert(obj)
-				},
-				UpdateFunc: func(oldObj, newObj interface{}) {
-					klog.V(3).Infof("Updated ingress: %#v", newObj)
-					upsert(newObj)
-				},
-				DeleteFunc: func(obj interface{}) {
-					klog.V(3).Infof("Removed ingress: %#v", obj)
-					remove(obj)
-				},
-			})
-			informerFactory.Start(wait.NeverStop)
-			informerFactory.WaitForCacheSync(wait.NeverStop)
+			for _, informer := range ingressInformers {
+				informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+					AddFunc: func(obj interface{}) {
+						klog.V(3).Infof("New ingress: %#v", obj)
+						upsert(obj)
+					},
+					UpdateFunc: func(oldObj, newObj interface{}) {
+						klog.V(3).Infof("Updated ingress: %#v", newObj)
+						upsert(newObj)
+					},
+					DeleteFunc: func(obj interface{}) {
+						klog.V(3).Infof("Removed ingress: %#v", obj)
+						remove(obj)
+					},
+				})
+			}
+			for _, factory := range factories {
+				factory.Start(wait.NeverStop)
+				factory.WaitForCacheSync(wait.NeverStop)
+			}
 
 			proxy := goproxy.NewProxyHttpServer()
 			if klog.V(verboseProxyDebugLevel).Enabled() {
@@ -447,6 +468,8 @@ func init() {
 	proxyCmd.Flags().StringVar(&listenAddress, "listen", "0.0.0.0:8080", "Address and port to listen on")
 	proxyCmd.Flags().StringToStringVar(&ingressClassMapping, "ingress-class-address", map[string]string{}, "Map ingress class names to addresses")
 	proxyCmd.Flags().StringVar(&kubeconfigPath, clientcmd.RecommendedConfigPathFlag, defaultKubeconfigPath, "Path to kubeconfig")
+	proxyCmd.Flags().BoolVar(&allNamespaces, "all-namespaces", true, "If true, watch ingresses in all namespaces")
+	proxyCmd.Flags().StringArrayVar(&namespaces, "namespaces", []string{}, "Namespaces to watch ingresses in. Ignored if --all-namespaces=true")
 	clientcmd.BindOverrideFlags(&k8sOverrides, proxyCmd.Flags(), clientcmd.RecommendedConfigOverrideFlags(""))
 	klogFlags = goflag.NewFlagSet("", goflag.PanicOnError)
 	klog.InitFlags(klogFlags)

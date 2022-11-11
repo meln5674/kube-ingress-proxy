@@ -1,7 +1,3 @@
-# Default values for kube-ingress-proxy.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 image:
   repository: github.com/meln5674/kube-ingress-proxy
   pullPolicy: IfNotPresent
@@ -22,7 +18,12 @@ serviceAccount:
   name: ""
 
 rbac:
+  # If true, will create a [Cluster]Role and [Cluster]RoleBinding to grant the service account read access to ingresses
   create: true
+  # If true, use Cluster-scoped RBAC
+  allNamespaces: true
+  # If allNamespaces is false, create namespaced-scoped RBAC for each namespace listed
+  namespaces: []
 
 podAnnotations: {}
 
@@ -63,11 +64,23 @@ tolerations: []
 
 affinity: {}
 
+
+# Address to listen on
 listenAddress: 0.0.0.0
 
+# Mapping from ingressClassName to the DNS name of the matching controller within the cluster
 controllerAddresses: {}
 #  - className: nginx
 #    address: ingress-nginx-controller.ingress-nginx.svc.cluster.local
 #
 
+# Log level, argument to klog -v
 logVerbosity: 0
+
+# Extra container/pod spec elements
+extraArgs: []
+extraEnv: []
+extraVolumes: []
+extraVolumeMounts: []
+extraContainers: []
+extraInitContainers: []

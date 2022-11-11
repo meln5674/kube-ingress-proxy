@@ -24,6 +24,10 @@ spec:
       serviceAccountName: {{ include "kube-ingress-proxy.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      {{- with .Values.extraInitContainers }}
+      {{- . | toYaml | nindent 6 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -32,11 +36,22 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
           - --listen={{ .Values.listenAddress }}:8080
+          - --all-namespaces={{ .Values.rbac.allNamespaces }}
+          {{- range .Values.rbac.namespaces }}
+          - --namespaces={{ . }}
+          {{- end }}
           {{- range .Values.controllerAddresses }}
           - --ingress-class-address={{ .className }}={{ .address }}
           {{- end }}
           {{- with .Values.logVerbosity }}
           - --v={{ . }} 
+          {{- end }}
+          {{- with .Values.extraArgs }}
+          {{- . | toYaml | nindent 10 }}
+          {{- end }}
+          env:
+          {{- with .Values.extraEnv }}
+          {{- . | toYaml | nindent 10 }}
           {{- end }}
           ports:
             - name: http
@@ -55,6 +70,13 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+          {{- with .Values.extraVolumesMounts }}
+          {{- . | toYaml | nindent 10 }}
+          {{- end }}
+      {{- with .Values.extraContainers }}
+      {{- . | toYaml | nindent 6 }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -66,4 +88,8 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- with .Values.extraVolumes }}
+      {{- . | toYaml | nindent 6 }}
       {{- end }}

@@ -127,4 +127,26 @@ sleep 10
 http_proxy=http://localhost:9090 https_proxy=http://localhost:9090 curl -fvkL "http://${WORDPRESS_HOST}"
 https_proxy=http://localhost:9090 curl -fvkL "https://${WORDPRESS_HOST}"
 
+helm upgrade kube-ingress-proxy ./deploy/helm/kube-ingress-proxy \
+   --install \
+   --wait \
+   --debug \
+   --set image.repository="${IMAGE_REPO}" \
+   --set image.tag="${IMAGE_TAG}" \
+   --set controllerAddresses[0].className=nginx \
+   --set controllerAddresses[0].address=ingress-nginx-controller.default.svc.cluster.local \
+   --set logVerbosity=10 \
+   --set hostPort.enabled=true \
+   --set hostPort.port=9090 \
+   --set rbac.allNamespaces=false \
+   --set rbac.namespaces[0]=default
+
+kubectl rollout status ds/kube-ingress-proxy
+
+sleep 10
+
+http_proxy=http://localhost:9090 https_proxy=http://localhost:9090 curl -fvkL "http://${WORDPRESS_HOST}"
+https_proxy=http://localhost:9090 curl -fvkL "https://${WORDPRESS_HOST}"
+
+
 echo Passed!

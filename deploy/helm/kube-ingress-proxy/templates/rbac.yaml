@@ -1,28 +1,40 @@
 {{- if .Values.rbac.create }}
-{{/* TODO: Allow specific namespaces */}}
+{{- $namespaces := list "" }}
+{{- $roleKind := "ClusterRole" }}
+{{- $roleBindingKind := "ClusterRoleBinding" }}
+{{- if not .Values.rbac.allNamespaces }}
+{{- $namespaces = .Values.rbac.namespaces }}
+{{- $roleKind = "Role" }}
+{{- $roleBindingKind = "RoleBinding" }}
+{{- end }}
+{{- range $namespace := $namespaces }}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ $roleKind }}
 metadata:
-  name: {{ include "kube-ingress-proxy.fullname" . }}
+  name: {{ include "kube-ingress-proxy.fullname" $ }}
+  namespace: {{ $namespace }}
   labels:
-    {{- include "kube-ingress-proxy.labels" . | nindent 4 }}
+    {{- include "kube-ingress-proxy.labels" $ | nindent 4 }}
 rules:
 - apiGroups: [networking.k8s.io]
   resources: [ingresses]
   verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: {{ $roleBindingKind }}
 metadata:
-  name: {{ include "kube-ingress-proxy.fullname" . }}
+  name: {{ include "kube-ingress-proxy.fullname" $ }}
+  namespace: {{ $namespace }}
   labels:
-    {{- include "kube-ingress-proxy.labels" . | nindent 4 }}
+    {{- include "kube-ingress-proxy.labels" $ | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ include "kube-ingress-proxy.fullname" . }}
+  kind: {{ $roleKind }}
+  name: {{ include "kube-ingress-proxy.fullname" $ }}
 subjects:
 - kind: ServiceAccount
-  name: {{ include "kube-ingress-proxy.serviceAccountName" . }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "kube-ingress-proxy.serviceAccountName" $ }}
+  namespace: {{ $.Release.Namespace }}
+---
+{{- end }}
 {{- end }}

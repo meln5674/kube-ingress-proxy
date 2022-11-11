@@ -85,3 +85,54 @@ If using Kind, make sure to add an extra section as shown [here](https://kind.si
 If using Chrome (or one of it's cousings such as Brave or Edge), go to [this page](brave://settings/system) to set `http://localhost:<hostPort.port from above>` as both the http and https proxy. For Firefox, go [here](about:preferences) and go to "Network Setttings: to set this.
 
 After doing this, you'll be able to debug your services and ingresses straight in your browser, as well as utilize browser-based test frameworks such as Selenium or Karma. Just make sure to revert these settings once you're done.
+
+## Common Configuration
+
+### Namespaced access
+
+If you do not have cluster-scoped access, install like so
+
+```bash
+helm upgrade k8s-ingress-proxy/k8s-ingress-proxy \
+    --install \
+    --wait \
+    --set allNamespaces=false \
+    --set namespaces[0]=<namespace 1> \
+    --set namespaces[1]=<namespace 2> \
+    # ...
+```
+
+### Second Hop Proxy
+
+If you need requests which leave the cluster (e.g. to the public internet) to themselves be proxied, install like so
+
+```bash
+helm upgrade k8s-ingress-proxy/k8s-ingress-proxy \
+    --install \
+    --wait \
+    --set extraEnv[0].name=http_proxy \
+    --set extraEnv[0].value=<second proxy url> \
+    --set extraEnv[1].name=https_proxy \
+    --set extraEnv[1].value=<second proxy url> \
+    --set extraEnv[2].name=no_proxy \
+    --set extraEnv[2].value=<exceptions, separated by comma>
+```
+
+Make sure to include your cluster domain (e.g. svc.cluster.local) in your list of exceptions
+
+### Out-of-Cluster
+
+If you have write access to your /etc/hosts file, and your ingress controller(s) are exposed on localhost, you can run the tool natively.
+
+For example, if your ingress-nginx-controller is accessible on localhost:80 and localhost:443
+
+```bash
+go build -o kube-ingress-proxy main.go
+
+sudo ./kube-ingress-proxy proxy \
+    --kubeconfig=~/.kube/config \
+    --ingress-class-address nginx=localhost \
+    --listen localhost:8080 &
+
+http_proxy=http://localhost:8080 curl -v http://some.internal.hostname
+```
