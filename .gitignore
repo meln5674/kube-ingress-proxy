@@ -1,0 +1,3 @@
+kube-ingress-proxy
+integration-test/kind.kubeconfig
+integration-test/last-image
