@@ -27,8 +27,8 @@ This tool operates as a pod within your local cluster, and scans all namespaces 
 If you've got the [ingress-nginx](https://github.com/kubernetes/ingress-nginx/) installed in the `ingress-nginx` namespace, install the proxy like this
 
 ```bash
-helm repo add https://meln5674.github.io/k8s-ingress-proxy
-helm upgrade k8s-ingress-proxy/k8s-ingress-proxy \
+helm repo add kube-ingress-proxy https://meln5674.github.io/kube-ingress-proxy
+helm upgrade kube-ingress-proxy/kube-ingress-proxy \
     --install \
     --wait \
     --set controllerAddresses[0].className=nginx \
