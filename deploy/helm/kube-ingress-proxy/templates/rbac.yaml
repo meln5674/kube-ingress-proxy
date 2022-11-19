@@ -19,6 +19,11 @@ rules:
 - apiGroups: [networking.k8s.io]
   resources: [ingresses]
   verbs: [get, list, watch]
+{{- if $.Values.istio.enabled }}
+- apiGroups: [networking.istio.io]
+  resources: [virtualservices]
+  verbs: [get, list, watch]
+{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: {{ $roleBindingKind }}

@@ -6,4 +6,5 @@ nodes:
   - containerPort: 9090
     hostPort: 9090 # Not a typo, testing setting a non-default port
     listenAddress: "127.0.0.1"
-    protocol: TCP 
+    protocol: TCP
+

@@ -72,7 +72,17 @@ listenAddress: 0.0.0.0
 controllerAddresses: {}
 #  - className: nginx
 #    address: ingress-nginx-controller.ingress-nginx.svc.cluster.local
-#
+
+
+
+istio:
+  # If enabled, will monitor for VirtualServices as well as ingresses
+  enabled: false
+  # Mapping from istio gateway namespace/name to the DNS name of the matching service within the cluster
+  istioGatewayAddresses: {}
+  #  - namespace: gateway-namespace
+  #    name: gateway-name
+  #    address: gateway-service.gateway-service-namespace.svc.cluster.local
 
 # Log level, argument to klog -v
 logVerbosity: 0

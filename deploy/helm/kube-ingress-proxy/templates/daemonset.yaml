@@ -43,6 +43,12 @@ spec:
           {{- range .Values.controllerAddresses }}
           - --ingress-class-address={{ .className }}={{ .address }}
           {{- end }}
+          {{- if .Values.istio.enabled }}
+          - --istio-enabled=true
+          {{- range .Values.istio.gatewayAddresses }}
+          - --istio-gateway-address={{ .namespace }}/{{ .name }}={{ .address }}
+          {{- end }}
+          {{- end }}
           {{- with .Values.logVerbosity }}
           - --v={{ . }} 
           {{- end }}
