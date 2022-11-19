@@ -56,12 +56,10 @@ jobs:
         run: |
           helm lint '${{ env.CHART_DIR }}'
           helm template '${{ env.CHART_DIR }}'
-          # Need to do this otherwise it will end up publishing the test chart
-          rm -rf deploy/helm/kube-ingress-proxy
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
-          charts_dir: helm
+          charts_dir: deploy/helm
