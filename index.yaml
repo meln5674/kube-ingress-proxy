@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   kube-ingress-proxy:
   - apiVersion: v2
+    appVersion: v0.3.0-rc2
+    created: "2022-12-02T01:27:24.052306289Z"
+    description: A Helm chart for Kubernetes
+    digest: 1d79abe52f02ee5fa385918f47c7d2e9378d99784f5cfd75a9ad85cf01eadc40
+    name: kube-ingress-proxy
+    type: application
+    urls:
+    - https://github.com/meln5674/kube-ingress-proxy/releases/download/kube-ingress-proxy-v0.3.0-rc2/kube-ingress-proxy-v0.3.0-rc2.tgz
+    version: v0.3.0-rc2
+  - apiVersion: v2
     appVersion: v0.3.0-rc1
     created: "2022-12-02T01:06:41.092929329Z"
     description: A Helm chart for Kubernetes
@@ -21,4 +31,4 @@ entries:
     urls:
     - https://github.com/meln5674/kube-ingress-proxy/releases/download/kube-ingress-proxy-v0.3.0-rc0/kube-ingress-proxy-v0.3.0-rc0.tgz
     version: v0.3.0-rc0
-generated: "2022-12-02T01:06:41.09294473Z"
+generated: "2022-12-02T01:27:24.052605288Z"
