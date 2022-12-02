@@ -12,6 +12,8 @@ require (
 	k8s.io/klog/v2 v2.80.1
 )
 
+replace github.com/elazarl/goproxy => github.com/meln5674/goproxy v0.0.0-20221202004515-0f4d887cdba3
+
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
