@@ -1,5 +1,5 @@
 image:
-  repository: github.com/meln5674/kube-ingress-proxy
+  repository: ghcr.io/meln5674/kube-ingress-proxy
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
