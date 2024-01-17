@@ -12,7 +12,7 @@ require (
 	k8s.io/klog/v2 v2.80.1
 )
 
-replace github.com/elazarl/goproxy => github.com/meln5674/goproxy v0.0.0-20221202012600-bd0136651358
+replace github.com/elazarl/goproxy => github.com/meln5674/goproxy v0.0.0-20240117183607-7ab2b621ae4a
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
