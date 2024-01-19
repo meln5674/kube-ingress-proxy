@@ -1,0 +1,131 @@
+# Default: Deny everything
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  - Ingress
+---
+# allow the ingress controller to receive from the ingress proxies, and allow sending to the downstream service (nginx)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: ingress-nginx
+  policyTypes:
+  - Egress
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: kube-ingress-proxy
+      namespaceSelector: {}
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: nginx
+  - to:
+    - ipBlock:
+        # k8s pods/svcs
+        cidr: 10.96.0.1/32
+    - ipBlock:
+        # docker kind network
+        # TODO: Get this from docker network inspect kind -f '{{ (index .IPAM.Config 0).Subnet }}'
+        cidr: 172.18.0.0/16
+---
+# Allow the nginx to receive from the ingress controller and directly from the ingress proxies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-nginx
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: nginx
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: ingress-nginx
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: kube-ingress-proxy
+      namespaceSelector: {}
+---
+# Allow squid-auth to talk to its DB
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-squid-auth-db-ingress
+spec:
+  podSelector:
+    matchLabels:
+      release: squid-auth
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: squid-auth-mariadb
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-squid-auth-db-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: squid-auth-mariadb
+  policyTypes:
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          release: squid-auth
+---
+# Allow squid to access services outside the cluster, plus coreDNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-squid-external
+spec:
+  podSelector:
+    matchLabels:
+      app: squid
+  policyTypes:
+  - Egress
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: kube-ingress-proxy
+      namespaceSelector: {}
+  egress:
+  - {}
+  # - to:
+  #   - ipBlock:
+  #       # This actually allows everything, but the default deny should
+  #       # block access to nginx and the ingress controller
+  #       cidr: 0.0.0.0/0
+  #   - namespaceSelector:
+  #       matchExpressions:
+  #       - key: namespace
+  #         operator: In
+  #         values: [kube-system]
+  #     podSelector:
+  #       matchLabels:
+  #         k8s-app: kube-dns

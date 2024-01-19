@@ -1,0 +1,48 @@
+# Block all egress except to the authenticated squid proxy and the k8s api
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: kube-ingress-proxy
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        # docker kind network
+        # TODO: Get this from docker network inspect kind -f '{{ (index .IPAM.Config 0).Subnet }}'
+        cidr: 172.18.0.0/16
+    ports:
+    - port: 6443
+      protocol: TCP
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: nginx
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+      podSelector:
+        matchLabels:
+          release: squid-auth
